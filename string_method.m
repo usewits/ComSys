@@ -69,57 +69,57 @@ function write_energies(phi, fileID)
     fprintf(fileID,"\n");
 endfunction
 
-function result = phi_at_pos(phi, fracional_index)
+function result = phi_at_pos(phi, fractional_index)
     index = floor(fractional_index);
     alpha = fractional_index - index;
-    result = phi{index}*alpha + phi{index+1}*(1-alpha)
-endfunction
+    result = phi{index}*(1-alpha) + phi{index+1}*alpha;
+endfunction %Tested, works!
 
 function result = get_fractional_index_at_dist(phi, fractional_index_a, dist)
-    index_a = floor(fractional_index_a);
-    alpha_a = fractional_index_a - index_a;
+    index_a = floor(fractional_index_a);%The integer index just before fractional_index_a
     index_b = index_a;%Goes wrong if last integer index is more than dist away..
 
-    pos_a = phi_at_pos(phi, fractional_index_a)
-    while index_b <= length(phi)
-        if distance(pos_a, phi{index_b}) < dist
-            index_b += 1;
-        endif
-    endwhile%TODO: check if whole function is correct
-    if index_b == length(phi)
-        result = index_b + 1; %overflow!
-    else
-        %find point on [phi{index_b}, phi{index_b+1}] at distance dist from pos_a
-        b = phi{index_b};
-        bp = phi{index_b+1};
-        a = pos_a;
-
-        ba = b*a';
-        bbp = b*bp';
-        bpa = bp*a';
-        a2 = a*a';
-        b2 = b*b';
-        bp2 = bp*bp';
-       
-        determinant = 4*(ba-bbp+bp2-bpa)^2 - 4*(b2-2*bbp+bp2)*(a2+bp2-2*bpa-dist^2);
-        if determinant < 0
-            result = -1;
-            disp("Error! Could not find intersection!");
+    %Find index_b, such that the segment [phi{index_b}, phi{index_b+1}] contains a point at distance dist
+    pos_a = phi_at_pos(phi, fractional_index_a);
+    while distance(pos_a, phi{index_b+1}) < dist
+        index_b += 1;
+        if index_b == length(phi)
+            result = length(phi) + 1; %overflow!
             return
         endif
-        alpha1 =  (ba-bbp+bp2-bpa-0.5*sqrt(determinant)) / (b2-2*bbp+bp2);
-        alpha2 =  (ba-bbp+bp2-bpa+0.5*sqrt(determinant)) / (b2-2*bbp+bp2);
-        if alpha1 >= 0 && alpha1 <= 1
-            result = index_b+alpha1;
-        elseif alpha2 >= 0 && alpha2 <= 1
-            result = index_b+alpha2;
-        else
-            result = -1;
-            disp("Error! Could not find intersection!");
-        endif
+    endwhile
+
+    %find point on [phi{index_b}, phi{index_b+1}] at distance dist from pos_a
+    %(intersection of line-segment with circle)
+    b = phi{index_b};
+    bp = phi{index_b+1};
+    a = pos_a;
+
+    ba = b*a';
+    bbp = b*bp';
+    bpa = bp*a';
+    a2 = a*a';
+    b2 = b*b';
+    bp2 = bp*bp';
+   
+    determinant = 4*(ba-bbp+bp2-bpa)^2 - 4*(b2-2*bbp+bp2)*(a2+bp2-2*bpa-dist^2);
+    if determinant < 0
+        result = -1;
+        disp("Error! Could not find intersection!");
+        return
     endif
-    
-endfunction
+    alpha1 =  1 - (ba-bbp+bp2-bpa-0.5*sqrt(determinant)) / (b2-2*bbp+bp2);
+    alpha2 =  1 - (ba-bbp+bp2-bpa+0.5*sqrt(determinant)) / (b2-2*bbp+bp2);
+    if alpha1 >= 0 && alpha1 <= 1
+        result = index_b+alpha1;
+    elseif alpha2 >= 0 && alpha2 <= 1
+        result = index_b+alpha2;
+    else
+        result = -1;
+        disp("Error! Could not find intersection!");
+    endif
+
+endfunction %Function works (at least on initial/default phi)
 
 function result = reparametrize(phi)
     d_min = Inf;
@@ -147,6 +147,8 @@ function result = reparametrize(phi)
     %Notice that code is duplicate to part needed in bin-search.. how to use this?
 endfunction
 
+
+
 N = 10;          %Number of positions in string
 h = sqrt(3)/2;   %Height of unit-triangle
 b = 1/2;
@@ -164,26 +166,26 @@ endfor
 
 fileID_pos = fopen('pos.txt','w');
 fileID_energy = fopen('energy.txt','w');
-
-for iter = 0:n_iters
-    dphi = cell(0,N);
-    t_hats = cell(0,N);
-
-    for phii = 1:(N-1)
-        dphi{phii+1} = perp_component_grad_phi(phi, phii+1);
-        t_hats{phii+1} = t_hat(phi, phii+1);
-    endfor
-
-    write_energies(phi, fileID_energy);
-
-    for phii = 1:(N-1)
-        cur_t_hat = t_hats{phii+1}; %This is what is should be!
-        cur_dphi = dphi{phii+1};
-        cur_phi = phi{phii+1};
-        write_to_file(cur_phi, fileID_pos);
-        phi{phii+1} -= 0.01*cur_dphi;  %TODO: some GC method moving along this comp
-    endfor
-endfor
-
+%
+%for iter = 0:n_iters
+%    dphi = cell(0,N);
+%    t_hats = cell(0,N);
+%
+%    for phii = 1:(N-1)
+%        dphi{phii+1} = perp_component_grad_phi(phi, phii+1);
+%        t_hats{phii+1} = t_hat(phi, phii+1);
+%    endfor
+%
+%    write_energies(phi, fileID_energy);
+%
+%    for phii = 1:(N-1)
+%        cur_t_hat = t_hats{phii+1}; %This is what is should be!
+%        cur_dphi = dphi{phii+1};
+%        cur_phi = phi{phii+1};
+%        write_to_file(cur_phi, fileID_pos);
+%        phi{phii+1} -= 0.01*cur_dphi;  %TODO: some GC method moving along this comp
+%    endfor
+%endfor
+%
 fclose(fileID_pos);
 fclose(fileID_energy);
