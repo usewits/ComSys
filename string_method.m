@@ -22,7 +22,7 @@ function result = energy(a)
     endfor
 endfunction
 
-function result = grad_energy(a)
+function result = grad_energy(a)    %Assuming 2D system
     result = zeros(1,length(a));
     for ix = 1:2:length(a)
         iy = ix+1;
@@ -81,7 +81,7 @@ function result = phi_at_pos(phi, fractional_index)
     else
         result = phi{index}*(1-alpha) + phi{index+1}*alpha;
     endif
-endfunction %Tested, works!
+endfunction
 
 function result = get_fractional_index_at_dist(phi, fractional_index_a, dist)
     index_a = floor(fractional_index_a);%The integer index just before fractional_index_a
@@ -153,12 +153,12 @@ function result = get_fractional_index_at_dist(phi, fractional_index_a, dist)
         disp("!")
     endif
 
-endfunction %Function works (at least on initial/default phi)
+endfunction
 
 function result = reparametrize(phi)
     d_max = -Inf;
     d_min =  Inf;
-    d_mid =  0;    %TODO: test this function
+    d_mid =  0;
     for i = 1:(length(phi)-1)
         d = distance(phi{i+1}, phi{i});
         if d < d_min
@@ -170,12 +170,14 @@ function result = reparametrize(phi)
     endfor
 
     epsilon = 1e-10;
-    
+    indices = 1:length(phi);
+
     while d_max - d_min >= epsilon
         d_mid = (d_min+d_max)/2;
         
         frac_index = 1;
         for i = 1:length(phi)-1%Get evenly spaced points along phi
+            indices(i) = frac_index;
             frac_index = get_fractional_index_at_dist(phi, frac_index, d_mid);
             if frac_index > length(phi)
                 break
@@ -189,15 +191,8 @@ function result = reparametrize(phi)
         endif
     endwhile
     
-    indices = 1:length(phi);
-    frac_index = 1;
-    for i = 1:length(phi)-1%Get evenly spaced points along phi
-        indices(i) = frac_index;
-        frac_index = get_fractional_index_at_dist(phi, frac_index, d_mid);
-    endfor
     indices(1) = 1; %Force the endpoints to have correct indices
     indices(length(phi)) = length(phi);
-    indices
     
     result = cell(0,length(phi));%Obtain positions along phi to return
     for i = 1:length(phi)
@@ -208,45 +203,54 @@ endfunction
 
 
 
-N = 100;          %Number of positions in string
+N = 200;          %Number of positions in string
+n_iters = 10;
+
+
+%Begin and end state (a and b)  (PARTICLES)
 h = sqrt(3)/2;   %Height of unit-triangle
 b = 1/2;
-n_iters = 4;
-
 state_a = [ -1, 0,  -b, h,   b, h,   1, 0,   b,-h,   -b,-h,   0, 0 ];
 state_b = [ -1, 0,   0, 0,  -b, h,   1, 0,   b,-h,   -b,-h,   b, h ]; 
                   %2 -> 7,  3 -> 2,                          7 -> 3
 
-phi_hist = cell(0,n_iters);
+
+
+%Find intermediate states using linear interpolation
 phi = cell(0,N);
 for phii = 0:N
     alpha = phii/N;
     phi{phii+1} = alpha*state_a + (1-alpha)*state_b;
 endfor
 
+%Open files to write results
 fileID_pos = fopen('pos.txt','w');
 fileID_energy = fopen('energy.txt','w');
 
+phi_hist = cell(0,n_iters);     %Store all string positions (for debugging)
+
 for iter = 0:n_iters
+    iter                        %Display iteration number
     dphi = cell(0,N);
     t_hats = cell(0,N);
 
-    for phii = 1:(N-1)
+    for phii = 1:(N-1)          %Calculate direction of potential and string
         dphi{phii+1} = perp_component_grad_phi(phi, phii+1);
         t_hats{phii+1} = t_hat(phi, phii+1);
     endfor
 
-    phi_hist{iter+1} = phi;
+    phi_hist{iter+1} = phi;     %Store all strings for review
     write_energies(phi, fileID_energy);
 
-    for phii = 1:(N-1)
+    for phii = 1:(N-1)          %Update the string
         cur_t_hat = t_hats{phii+1}; %This is what is should be!
         cur_dphi = dphi{phii+1};
         cur_phi = phi{phii+1};
         write_to_file(cur_phi, fileID_pos);
-        phi{phii+1} -= 0.001*cur_dphi;  %TODO: some GC method moving along this comp
+        phi{phii+1} -= 0.0001*cur_dphi;  %TODO: some GC method moving along this comp
     endfor
-    %phi = reparametrize(phi);
+
+    phi = reparametrize(phi);   %Make sure states in string are equidistant
 endfor
 
 fclose(fileID_pos);
