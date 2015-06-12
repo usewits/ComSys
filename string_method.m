@@ -1,28 +1,31 @@
+global potential;
+global dpotentialdx;
+global dpotentialdy;
+
+
 function result = distance(a,b)
     result = norm(a-b,2);
 endfunction
 
-function result = potential(r)
-    result = (1/r)^4 - 2*(1/r)^2;
-endfunction
-
-function result = dpotentialdx(x,y) %Differentiated to x
-    rsq = x*x + y*y;
-    result = 4*x*(-1+rsq)/(rsq^3);
-endfunction
-
-function result = energy(a)
+function result = energy(a) %TODO: MAKE THIS GENERIC FOR PEAKS/PARTICLES
+    global potential;
     result = 0;
     for ix = 1:2:length(a)
         iy = ix+1;
         for jx = (ix+2):2:length(a)
             jy = jx+1;
-            result += potential(distance([a(ix),a(iy)],[a(jx),a(jy)]));
+            
+            dx = abs(a(ix)-a(jx));
+            dy = abs(a(iy)-a(jy));
+            result += potential(dx, dy);
         endfor
     endfor
 endfunction
 
+%TODO: THINK ABOUT THIS ONE
 function result = grad_energy(a)    %Assuming 2D system
+    global dpotentialdx;
+    global dpotentialdy;
     result = zeros(1,length(a));
     for ix = 1:2:length(a)
         iy = ix+1;
@@ -34,7 +37,7 @@ function result = grad_energy(a)    %Assuming 2D system
             dx = abs(a(ix)-a(jx));%is this correct way to calc grad?
             dy = abs(a(iy)-a(jy));
             result(ix) += dpotentialdx(dx, dy);
-            result(iy) += dpotentialdx(dy, dx);
+            result(iy) += dpotentialdy(dx, dy);
         endfor
     endfor
 endfunction
@@ -202,17 +205,65 @@ function result = reparametrize(phi)
 endfunction
 
 
+%Settings of the simulation
+N = 10;          %Number of positions in string
+n_iters = 100;
+stepsize = 0.001;
+simulation = "peaks";
 
-N = 200;          %Number of positions in string
-n_iters = 10;
 
 
-%Begin and end state (a and b)  (PARTICLES)
-h = sqrt(3)/2;   %Height of unit-triangle
-b = 1/2;
-state_a = [ -1, 0,  -b, h,   b, h,   1, 0,   b,-h,   -b,-h,   0, 0 ];
-state_b = [ -1, 0,   0, 0,  -b, h,   1, 0,   b,-h,   -b,-h,   b, h ]; 
-                  %2 -> 7,  3 -> 2,                          7 -> 3
+if strcmpi(simulation, "particles")
+    %Begin and end state (a and b)
+    h = sqrt(3)/2;   %Height of unit-triangle
+    b = 1/2;
+    state_a = [ -1, 0,  -b, h,   b, h,   1, 0,   b,-h,   -b,-h,   0, 0 ];
+    state_b = [ -1, 0,   0, 0,  -b, h,   1, 0,   b,-h,   -b,-h,   b, h ]; 
+                      %2 -> 7,  3 -> 2,                          7 -> 3
+
+    %Potential and derivative
+    function result = potentialParticles(x,y)
+        r = sqrt(x*x + y*y);
+        result = (1/r)^4 - 2*(1/r)^2;
+    endfunction
+
+    function result = dpotentialdxParticles(x,y) %Differentiated to x
+        rsq = x*x + y*y;
+        result = 4*x*(-1+rsq)/(rsq^3);
+    endfunction
+
+    function result = dpotentialdyParticles(x,y) %Differentiated to x
+        rsq = x*x + y*y;
+        result = 4*y*(-1+rsq)/(rsq^3);
+    endfunction
+
+    potential = @potentialParticles;
+    dpotentialdx = @dpotentialdxParticles;
+    dpotentialdy = @dpotentialdyParticles;
+endif
+
+if strcmpi(simulation, "peaks")
+    %Begin and end state (a and b)
+    state_a = [-1.3474,   0.204519];
+    state_b = [ 0.228279,-1.62553 ];
+
+    %Potential and derivative
+    function result = potentialPeaks(x,y)
+        result = peaks(x,y)
+    endfunction
+
+    function result = dpotentialdxPeaks(x,y) %Differentiated to x
+        result = -6*exp(-x^2-(1+y)^2)*(1-x)-6*exp(-x^2-(1+y)^2)*(1-x)^2*x+2/3*exp(-(1+x)^2-y^2)*(1+x)-10*exp(-x^2-y^2)*(1/5-3*x^2)+20*exp(-x^2-y^2)*x*(x/5-x^3-y^5);
+    endfunction
+
+    function result = dpotentialdyPeaks(x,y) %Differentiated to x
+        result = 2/3*exp(-(1+x)^2-y^2)*y+50*exp(-x^2-y^2)*y^4-6*exp(-x^2-(1+y)^2)*(1-x)^2*(1+y)+20*exp(-x^2-y^2)*y*(x/5-x^3-y^5);
+    endfunction
+
+    potential = @potentialPeaks;
+    dpotentialdx = @dpotentialdxPeaks;
+    dpotentialdy = @dpotentialdyPeaks;
+endif
 
 
 
@@ -247,7 +298,7 @@ for iter = 0:n_iters
         cur_dphi = dphi{phii+1};
         cur_phi = phi{phii+1};
         write_to_file(cur_phi, fileID_pos);
-        phi{phii+1} -= 0.0001*cur_dphi;  %TODO: some GC method moving along this comp
+        phi{phii+1} -= stepsize*cur_dphi;  %TODO: some GC method moving along this comp
     endfor
 
     phi = reparametrize(phi);   %Make sure states in string are equidistant
