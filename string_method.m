@@ -1,45 +1,12 @@
 global potential;
 global dpotentialdx;
 global dpotentialdy;
+global energy;
+global grad_energy;
 
 
 function result = distance(a,b)
     result = norm(a-b,2);
-endfunction
-
-function result = energy(a) %TODO: MAKE THIS GENERIC FOR PEAKS/PARTICLES
-    global potential;
-    result = 0;
-    for ix = 1:2:length(a)
-        iy = ix+1;
-        for jx = (ix+2):2:length(a)
-            jy = jx+1;
-            
-            dx = abs(a(ix)-a(jx));
-            dy = abs(a(iy)-a(jy));
-            result += potential(dx, dy);
-        endfor
-    endfor
-endfunction
-
-%TODO: THINK ABOUT THIS ONE
-function result = grad_energy(a)    %Assuming 2D system
-    global dpotentialdx;
-    global dpotentialdy;
-    result = zeros(1,length(a));
-    for ix = 1:2:length(a)
-        iy = ix+1;
-        for jx = 1:2:length(a)
-            if ix == jx
-                continue;
-            endif
-            jy = jx+1;
-            dx = abs(a(ix)-a(jx));%is this correct way to calc grad?
-            dy = abs(a(iy)-a(jy));
-            result(ix) += dpotentialdx(dx, dy);
-            result(iy) += dpotentialdy(dx, dy);
-        endfor
-    endfor
 endfunction
 
 function result = t_hat(phi, i)
@@ -47,6 +14,7 @@ function result = t_hat(phi, i)
 endfunction
 
 function result = perp_component_grad_phi(phi, i)
+    global grad_energy;
     t = t_hat(phi,i);
     g = grad_energy(phi{i});
     result = g - (g*t')*t;
@@ -63,6 +31,7 @@ function write_to_file(a, fileID)
 endfunction
 
 function write_energies(phi, fileID)
+    global energy
     for i = 1:length(phi)
         if i != 1
             fprintf(fileID,"\t");
@@ -210,6 +179,7 @@ N = 10;          %Number of positions in string
 n_iters = 100;
 stepsize = 0.001;
 simulation = "peaks";
+%simulation = "particles";
 
 
 
@@ -237,19 +207,55 @@ if strcmpi(simulation, "particles")
         result = 4*y*(-1+rsq)/(rsq^3);
     endfunction
 
+    function result = energyParticles(a)        %Assuming 2D sum of local potentials
+        global potential;
+        result = 0;
+        for ix = 1:2:length(a)
+            iy = ix+1;
+            for jx = (ix+2):2:length(a)
+                jy = jx+1;
+                
+                dx = abs(a(ix)-a(jx));
+                dy = abs(a(iy)-a(jy));
+                result += potential(dx, dy);
+            endfor
+        endfor
+    endfunction
+
+    function result = grad_energyParticles(a)    %Assuming 2D sum of local potentials
+        global dpotentialdx;
+        global dpotentialdy;
+        result = zeros(1,length(a));
+        for ix = 1:2:length(a)
+            iy = ix+1;
+            for jx = 1:2:length(a)
+                if ix == jx
+                    continue;
+                endif
+                jy = jx+1;
+                dx = abs(a(ix)-a(jx));%is this correct way to calc grad?
+                dy = abs(a(iy)-a(jy));
+                result(ix) += dpotentialdx(dx, dy);
+                result(iy) += dpotentialdy(dx, dy);
+            endfor
+        endfor
+    endfunction
+
     potential = @potentialParticles;
     dpotentialdx = @dpotentialdxParticles;
     dpotentialdy = @dpotentialdyParticles;
+    energy = @energyParticles;
+    grad_energy = @grad_energyParticles;
 endif
 
 if strcmpi(simulation, "peaks")
-    %Begin and end state (a and b)
+    %Begin and end state (a and b) (this are local minima, where found numerically using mathematica)
     state_a = [-1.3474,   0.204519];
     state_b = [ 0.228279,-1.62553 ];
 
     %Potential and derivative
     function result = potentialPeaks(x,y)
-        result = peaks(x,y)
+        result = peaks(x,y);
     endfunction
 
     function result = dpotentialdxPeaks(x,y) %Differentiated to x
@@ -260,9 +266,31 @@ if strcmpi(simulation, "peaks")
         result = 2/3*exp(-(1+x)^2-y^2)*y+50*exp(-x^2-y^2)*y^4-6*exp(-x^2-(1+y)^2)*(1-x)^2*(1+y)+20*exp(-x^2-y^2)*y*(x/5-x^3-y^5);
     endfunction
 
+    function result = energyPeaks(a)         %Assuming 2D global static potential
+        global potential;
+        result = 0;
+        for ix = 1:2:length(a)
+            iy = ix+1;
+            result += potential(a(ix), a(iy));
+        endfor
+    endfunction
+
+    function result = grad_energyPeaks(a)    %Assuming 2D global static potential
+        global dpotentialdx;
+        global dpotentialdy;
+        result = zeros(1,length(a));
+        for ix = 1:2:length(a)
+            iy = ix+1;
+            result(ix) = dpotentialdx(a(ix), a(iy));
+            result(iy) = dpotentialdy(a(ix), a(iy));
+        endfor
+    endfunction
+
     potential = @potentialPeaks;
     dpotentialdx = @dpotentialdxPeaks;
     dpotentialdy = @dpotentialdyPeaks;
+    energy = @energyPeaks;
+    grad_energy = @grad_energyPeaks;
 endif
 
 
@@ -294,14 +322,14 @@ for iter = 0:n_iters
     write_energies(phi, fileID_energy);
 
     for phii = 1:(N-1)          %Update the string
-        cur_t_hat = t_hats{phii+1}; %This is what is should be!
+        cur_t_hat = t_hats{phii+1};
         cur_dphi = dphi{phii+1};
         cur_phi = phi{phii+1};
         write_to_file(cur_phi, fileID_pos);
         phi{phii+1} -= stepsize*cur_dphi;  %TODO: some GC method moving along this comp
     endfor
 
-    phi = reparametrize(phi);   %Make sure states in string are equidistant
+    %phi = reparametrize(phi);   %Make sure states in string are equidistant
 endfor
 
 fclose(fileID_pos);
