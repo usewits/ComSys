@@ -296,40 +296,43 @@ endif
 
 
 %Find intermediate states using linear interpolation
-phi = cell(0,N);
-for phii = 0:N
-    alpha = phii/N;
-    phi{phii+1} = alpha*state_a + (1-alpha)*state_b;
+phi = cell(0,N);        %phi{1} and phi{N} are fixed, phi{2}..phi{N-1} are not
+for phii = 1:N
+    alpha = (phii-1)/(N-1);
+    phi{phii} = alpha*state_a + (1-alpha)*state_b;
 endfor
 
 %Open files to write results
 fileID_pos = fopen('pos.txt','w');
 fileID_energy = fopen('energy.txt','w');
 
-phi_hist = cell(0,n_iters);     %Store all string positions (for debugging)
+phi_hist = cell(0, n_iters);      %Store all string positions (for debugging)
 
 for iter = 0:n_iters
-    iter                        %Display iteration number
+    iter                         %Display iteration number
     dphi = cell(0,N);
     t_hats = cell(0,N);
 
-    for phii = 1:(N-1)          %Calculate direction of potential and string
-        dphi{phii+1} = perp_component_grad_phi(phi, phii+1);
-        t_hats{phii+1} = t_hat(phi, phii+1);
+    for phii = 2:(N-1)             %Calculate direction of potential and string
+        dphi{phii} = perp_component_grad_phi(phi, phii);
+        t_hats{phii} = t_hat(phi, phii);
     endfor
 
-    phi_hist{iter+1} = phi;     %Store all strings for review
+    phi_hist{iter+1} = phi;      %Store all strings for review
     write_energies(phi, fileID_energy);
 
-    for phii = 1:(N-1)          %Update the string
-        cur_t_hat = t_hats{phii+1};
-        cur_dphi = dphi{phii+1};
-        cur_phi = phi{phii+1};
-        write_to_file(cur_phi, fileID_pos);
-        phi{phii+1} -= stepsize*cur_dphi;  %TODO: some GC method moving along this comp
+    for phii = 1:N
+        write_to_file(phi{phii}, fileID_pos);
     endfor
 
-    %phi = reparametrize(phi);   %Make sure states in string are equidistant
+    for phii = 2:(N-1)           %Update the string
+        cur_t_hat = t_hats{phii};
+        cur_dphi = dphi{phii};
+        cur_phi = phi{phii};
+        phi{phii} -= stepsize*cur_dphi;  %TODO: some GC method moving along this comp
+    endfor
+
+    phi = reparametrize(phi);   %Make sure states in string are equidistant
 endfor
 
 fclose(fileID_pos);
