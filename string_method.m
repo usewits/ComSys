@@ -5,12 +5,22 @@ global energy;
 global grad_energy;
 
 
+%Settings of the simulation
+N = 11;          %Number of positions in string
+n_iters = 200;
+stepsize = 0.005;
+%simulation = "peaks";
+simulation = "particles";
+
+
+
 function result = distance(a,b)
     result = norm(a-b,2);
 endfunction
 
-function result = t_hat(phi, i)
-    result = (phi{i+1}-phi{i})/norm(phi{i+1}-phi{i}); %Does this kind of normalisation make any sense?
+function result = t_hat(phi, i) 
+    %result = (phi{i+1}-phi{i})/norm(phi{i+1}-phi{i});%Euler Forward
+    result = (phi{i+1}-phi{i-1})/norm(phi{i+1}-phi{i-1});%Central
 endfunction
 
 function result = perp_component_grad_phi(phi, i)
@@ -173,14 +183,9 @@ function result = reparametrize(phi)
     
 endfunction
 
-
-%Settings of the simulation
-N = 10;          %Number of positions in string
-n_iters = 100;
-stepsize = 0.001;
-simulation = "peaks";
-%simulation = "particles";
-
+function result = putInBounds(a, minimum, maximum)
+    result = max(min(a, maximum), minimum);
+endfunction
 
 
 if strcmpi(simulation, "particles")
@@ -195,16 +200,19 @@ if strcmpi(simulation, "particles")
     function result = potentialParticles(x,y)
         r = sqrt(x*x + y*y);
         result = (1/r)^4 - 2*(1/r)^2;
+        result = putInBounds(result, -1.5, 1.5);%TEST with bounds
     endfunction
 
     function result = dpotentialdxParticles(x,y) %Differentiated to x
         rsq = x*x + y*y;
         result = 4*x*(-1+rsq)/(rsq^3);
+        result = putInBounds(result, -1.5, 1.5);%TEST with bounds
     endfunction
 
     function result = dpotentialdyParticles(x,y) %Differentiated to x
         rsq = x*x + y*y;
         result = 4*y*(-1+rsq)/(rsq^3);
+        result = putInBounds(result, -1.5, 1.5);%TEST with bounds
     endfunction
 
     function result = energyParticles(a)        %Assuming 2D sum of local potentials
@@ -310,6 +318,18 @@ phi_hist = cell(0, n_iters);      %Store all string positions (for debugging)
 
 for iter = 0:n_iters
     iter                         %Display iteration number
+
+    if iter == 40  %NOTE TMP CHANGE STEPSIZE
+        stepsize /= 2
+    endif
+    if iter == 110  %NOTE TMP CHANGE STEPSIZE
+        stepsize /= 2
+    endif
+%    if iter == 180  %NOTE TMP CHANGE STEPSIZE
+%        stepsize /= 10
+%    endif
+
+
     dphi = cell(0,N);
     t_hats = cell(0,N);
 
@@ -332,7 +352,9 @@ for iter = 0:n_iters
         phi{phii} -= stepsize*cur_dphi;  %TODO: some GC method moving along this comp
     endfor
 
-    phi = reparametrize(phi);   %Make sure states in string are equidistant
+    if mod(iter,5) == 0
+        phi = reparametrize(phi);   %Make sure states in string are equidistant
+    endif
 endfor
 
 fclose(fileID_pos);
