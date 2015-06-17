@@ -6,9 +6,9 @@ global grad_energy;
 
 
 %Settings of the simulation
-N = 20;          %Number of positions in string
+N = 200;          %Number of positions in string
 n_iters = 200;
-stepsize = 0.002;
+stepsize = 0.000001;
 %simulation = "peaks";
 simulation = "particles";
 
@@ -205,20 +205,20 @@ if strcmpi(simulation, "particles")
     %Potential and derivative
     function result = potentialParticles(x,y)
         r = sqrt(x*x + y*y);
-        result = (1/r)^4 - 2*(1/r)^2;
-        %result = putInBounds(result, -1.5, 1000);%TEST with bounds
+        %result = (1/r)^4 - 2*(1/r)^2;%soft
+        result = (1/r)^12 - 2*(1/r)^6;%hard
     endfunction
 
     function result = dpotentialdxParticles(x,y) %Differentiated to x
         rsq = x*x + y*y;
-        result = 4*x*(-1+rsq)/(rsq^3);
-        %result = putInBounds(result, -1.5, 1000);%TEST with bounds
+        %result = 4*x*(-1+rsq)/(rsq^3);%soft
+        result = 12*x*(-1+rsq^3)/(rsq^7);%hard
     endfunction
 
     function result = dpotentialdyParticles(x,y) %Differentiated to x
         rsq = x*x + y*y;
-        result = 4*y*(-1+rsq)/(rsq^3);
-        %result = putInBounds(result, -1.5, 1000);%TEST with bounds
+        %result = 4*y*(-1+rsq)/(rsq^3);%soft
+        result = 12*y*(-1+rsq^3)/(rsq^7);%hard
     endfunction
 
     function result = energyParticles(a)        %Assuming 2D sum of local potentials
@@ -328,13 +328,30 @@ phi_hist = cell(0, n_iters);      %Store all string positions (for debugging)
 
 for iter = 0:n_iters
     iter                         %Display iteration number
-
-    if iter == 50  %NOTE TMP CHANGE STEPSIZE
+    if iter == 5
+        stepsize *= 2
+    endif
+    if iter == 10
+        stepsize *= 10
+    endif
+    if iter == 34  %NOTE TMP CHANGE STEPSIZE
+        stepsize *= 10
+    endif
+    if iter == 50
+        stepsize *= 10
+    endif
+    if iter == 70
+        stepsize *= 2
+    endif
+    if iter == 100
         stepsize /= 2
     endif
-    if iter == 150  %NOTE TMP CHANGE STEPSIZE
-        stepsize /= 2
+    if iter == 150
+        stepsize /= 10
     endif
+%    if iter == 150  %NOTE TMP CHANGE STEPSIZE
+%        stepsize /= 2
+%    endif
 %    if iter == 150  %NOTE TMP CHANGE STEPSIZE
 %        stepsize /= 5
 %    endif
@@ -345,7 +362,6 @@ for iter = 0:n_iters
 
     for phii = 2:(N-1)             %Calculate direction of potential and string
         dphi{phii} = perp_component_grad_phi(phi, phii);
-        t_hats{phii} = t_hat(phi, phii);
     endfor
 
     phi_hist{iter+1} = phi;      %Store all strings for review
@@ -356,13 +372,11 @@ for iter = 0:n_iters
     endfor
 
     for phii = 2:(N-1)           %Update the string
-        cur_t_hat = t_hats{phii};
         cur_dphi = dphi{phii};
-        cur_phi = phi{phii};
         phi{phii} -= stepsize*cur_dphi;  %TODO: some GC method moving along this comp
     endfor
 
-    if mod(iter,1) == 0
+    if mod(iter,10) == 0
         phi = reparametrize(phi);   %Make sure states in string are equidistant
     endif
 endfor
