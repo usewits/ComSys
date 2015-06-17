@@ -6,9 +6,9 @@ global grad_energy;
 
 
 %Settings of the simulation
-N = 11;          %Number of positions in string
+N = 20;          %Number of positions in string
 n_iters = 200;
-stepsize = 0.005;
+stepsize = 0.002;
 %simulation = "peaks";
 simulation = "particles";
 
@@ -42,13 +42,19 @@ endfunction
 
 function write_energies(phi, fileID)
     global energy
+    max_energy = -9999;
     for i = 1:length(phi)
         if i != 1
             fprintf(fileID,"\t");
         endif
-        fprintf(fileID,"%f",energy(phi{i}));
+        cur_energy = energy(phi{i});
+        if cur_energy > max_energy
+            max_energy = cur_energy;
+        endif
+        fprintf(fileID,"%f",cur_energy);
     endfor
     fprintf(fileID,"\n");
+    max_energy  %print the maximum energy
 endfunction
 
 function result = phi_at_pos(phi, fractional_index)
@@ -200,19 +206,19 @@ if strcmpi(simulation, "particles")
     function result = potentialParticles(x,y)
         r = sqrt(x*x + y*y);
         result = (1/r)^4 - 2*(1/r)^2;
-        result = putInBounds(result, -1.5, 1.5);%TEST with bounds
+        %result = putInBounds(result, -1.5, 1000);%TEST with bounds
     endfunction
 
     function result = dpotentialdxParticles(x,y) %Differentiated to x
         rsq = x*x + y*y;
         result = 4*x*(-1+rsq)/(rsq^3);
-        result = putInBounds(result, -1.5, 1.5);%TEST with bounds
+        %result = putInBounds(result, -1.5, 1000);%TEST with bounds
     endfunction
 
     function result = dpotentialdyParticles(x,y) %Differentiated to x
         rsq = x*x + y*y;
         result = 4*y*(-1+rsq)/(rsq^3);
-        result = putInBounds(result, -1.5, 1.5);%TEST with bounds
+        %result = putInBounds(result, -1.5, 1000);%TEST with bounds
     endfunction
 
     function result = energyParticles(a)        %Assuming 2D sum of local potentials
@@ -222,7 +228,7 @@ if strcmpi(simulation, "particles")
             iy = ix+1;
             for jx = (ix+2):2:length(a)
                 jy = jx+1;
-                
+
                 dx = abs(a(ix)-a(jx));
                 dy = abs(a(iy)-a(jy));
                 result += potential(dx, dy);
@@ -241,11 +247,15 @@ if strcmpi(simulation, "particles")
                     continue;
                 endif
                 jy = jx+1;
-                dx = abs(a(ix)-a(jx));%is this correct way to calc grad?
-                dy = abs(a(iy)-a(jy));
+                dx = (a(ix)-a(jx));%is this correct way to calc grad?
+                dy = (a(iy)-a(jy));
                 result(ix) += dpotentialdx(dx, dy);
                 result(iy) += dpotentialdy(dx, dy);
             endfor
+            
+            %TEST additional term to avoid escape
+            %result(ix) += 5*a(ix)*(a(ix)^2/4+a(iy)^2/4)^9;
+            %result(iy) += 5*a(iy)*(a(ix)^2/4+a(iy)^2/4)^9;
         endfor
     endfunction
 
@@ -319,14 +329,14 @@ phi_hist = cell(0, n_iters);      %Store all string positions (for debugging)
 for iter = 0:n_iters
     iter                         %Display iteration number
 
-    if iter == 40  %NOTE TMP CHANGE STEPSIZE
+    if iter == 50  %NOTE TMP CHANGE STEPSIZE
         stepsize /= 2
     endif
-    if iter == 110  %NOTE TMP CHANGE STEPSIZE
+    if iter == 150  %NOTE TMP CHANGE STEPSIZE
         stepsize /= 2
     endif
-%    if iter == 180  %NOTE TMP CHANGE STEPSIZE
-%        stepsize /= 10
+%    if iter == 150  %NOTE TMP CHANGE STEPSIZE
+%        stepsize /= 5
 %    endif
 
 
@@ -352,7 +362,7 @@ for iter = 0:n_iters
         phi{phii} -= stepsize*cur_dphi;  %TODO: some GC method moving along this comp
     endfor
 
-    if mod(iter,5) == 0
+    if mod(iter,1) == 0
         phi = reparametrize(phi);   %Make sure states in string are equidistant
     endif
 endfor
