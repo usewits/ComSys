@@ -8,9 +8,9 @@ global grad_energy;
 %Settings of the simulation
 N = 200;          %Number of positions in string
 n_iters = 200;
-stepsize = 0.000001;
-%simulation = "peaks";
-simulation = "particles";
+stepsize = 0.01;
+simulation = "peaks";
+%simulation = "particles";
 
 
 
@@ -54,7 +54,7 @@ function write_energies(phi, fileID)
         fprintf(fileID,"%f",cur_energy);
     endfor
     fprintf(fileID,"\n");
-    max_energy  %print the maximum energy
+    printf("%.16f\n", max_energy)  %print the maximum energy
 endfunction
 
 function result = phi_at_pos(phi, fractional_index)
@@ -141,6 +141,28 @@ function result = get_fractional_index_at_dist(phi, fractional_index_a, dist)
         disp("!")
     endif
 
+endfunction
+
+function result = reparametrize2d(phi)
+    x = zeros(1, length(phi));
+    y = zeros(1, length(phi));
+    for i = 1:1:length(phi)
+        x(i) = phi{i}(1);
+        y(i) = phi{i}(2);
+    endfor
+    dx = x-circshift(x,[0 1]);
+    dy = y-circshift(y,[0 1]);
+    dx(1) = 0;
+    dy(1) = 0;
+    lxy = cumsum(sqrt(dx.^2+dy.^2));
+    lxy = lxy/lxy(length(phi));
+    x = interp1(lxy,x,linspace(0,1,length(phi)));
+    y = interp1(lxy,y,linspace(0,1,length(phi)));
+    
+    result = cell(0,length(phi));
+    for i = 1:1:length(phi)
+        result{i} = [x(i),y(i)];
+    endfor
 endfunction
 
 function result = reparametrize(phi)
@@ -309,6 +331,8 @@ if strcmpi(simulation, "peaks")
     dpotentialdy = @dpotentialdyPeaks;
     energy = @energyPeaks;
     grad_energy = @grad_energyPeaks;
+
+    reparametrize = @reparametrize2d; %More efficient reparametrisation
 endif
 
 
@@ -326,45 +350,34 @@ fileID_energy = fopen('energy.txt','w');
 
 phi_hist = cell(0, n_iters);      %Store all string positions (for debugging)
 
+dphi = cell(0,N);
+
 for iter = 0:n_iters
     iter                         %Display iteration number
-    if iter == 5
-        stepsize *= 2
-    endif
-    if iter == 10
-        stepsize *= 10
-    endif
-    if iter == 34  %NOTE TMP CHANGE STEPSIZE
-        stepsize *= 10
-    endif
-    if iter == 50
-        stepsize *= 10
-    endif
-    if iter == 70
-        stepsize *= 2
-    endif
-    if iter == 100
-        stepsize /= 2
-    endif
-    if iter == 150
-        stepsize /= 10
-    endif
-%    if iter == 150  %NOTE TMP CHANGE STEPSIZE
-%        stepsize /= 2
+%    if iter == 10              %stepsize scheme (primitive GC method..)
+%        stepsize *= 100
 %    endif
-%    if iter == 150  %NOTE TMP CHANGE STEPSIZE
-%        stepsize /= 5
+%    if iter == 20
+%        stepsize *= 10
 %    endif
-
-
-    dphi = cell(0,N);
-    t_hats = cell(0,N);
+%    if iter == 30
+%        stepsize *= 2
+%    endif
+%    if iter == 40
+%        stepsize *= 2
+%    endif
+%    if iter == 100
+%        stepsize /= 10
+%    endif
+%    if iter == 110
+%        stepsize /= 10
+%    endif
 
     for phii = 2:(N-1)             %Calculate direction of potential and string
         dphi{phii} = perp_component_grad_phi(phi, phii);
     endfor
 
-    phi_hist{iter+1} = phi;      %Store all strings for review
+%    phi_hist{iter+1} = phi;      %Store all strings for review
     write_energies(phi, fileID_energy);
 
     for phii = 1:N
