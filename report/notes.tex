@@ -1,0 +1,5 @@
+In the example code they use a $O(n)$ reparametrization step, but this is actually a very rough approximation; they interpolate the points linearly and assume that the distance between two points on this poly-line is linear in the difference between their parameters $\alpha_1, \alpha_2\in[0,1]$. If the path is strongly curved, this is a bad assumption (especially when reducing the number of points). My method does reach machine-precision, but takes $O(n\log n)$ time. We compared the actual time used and precision of both methods, my method is much slower, and actually seems to fail to reach high precision in some timesteps. Even when my method used only once in a few steps, and the reparametrization error is allowed to grow to approximately the size of the reparametrization error of the interp1 method, it is slower, and the quality varies more (even though the average can still be better), as a result the solution shows more wave-like error behaviour when my custom method is used, compared to the (faster) interp1 method with a similar average error.
+
+
+
+

@@ -1,0 +1,193 @@
+\documentclass{beamer}
+\usepackage{amsmath, amsthm, amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{geometry}
+\usepackage{algpseudocode}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{animate}
+\usepackage{tikz}
+
+\renewcommand{\mod}{~\mathrm{mod}~}
+\renewcommand{\div}{~\mathrm{div}~} 
+\renewcommand{\vec}[1]{\mathbf{#1}}
+\renewcommand{\phi}{\varphi}
+
+\renewcommand{\(}{\left(}
+\renewcommand{\)}{\right)}
+
+\newcommand{\dt}{\Delta t}
+\newcommand{\dx}{\Delta x}
+\newcommand{\hl}[1]{\textbf{#1}}
+\newcommand{\ceil}[1]{\lceil #1 \rceil}
+\newcommand{\floor}[1]{\lfloor #1 \rfloor}
+\newcommand{\half}[1]{\frac{{#1}}{2}}
+
+%There are different themes/colorthemes
+%\usetheme{default}
+\mode<presentation>{
+    %\usetheme{Berlin}
+    \setbeamertemplate{navigation symbols}{}
+    \setbeamersize{text margin left=2em,text margin right=2em}
+    \useoutertheme[subsection=false]{miniframes}
+    %\useinnertheme[shadow]{rounded}
+    \usecolortheme{rose}
+}
+%\useoutertheme{infolines}
+%\useoutertheme[subsection=false]{miniframes}
+
+\title[String Method]{The String Method} % short title / long title
+
+\author{Abe Wits}
+\institute[UU]
+{
+Utrecht University\\
+\medskip
+\textit{A.J.G.Wits@uu.nl}
+}
+\date{June 30, 2015}
+
+\begin{document}
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+\begin{frame}
+\frametitle{Overview}
+\tableofcontents
+\end{frame}
+
+\section{Introduction}%TODO write this
+%\subsection{Transition Paths}
+\begin{frame}
+String method for the study of rare events\\
+Weinan E, Weiquing Ren and Eric Vanden-Eijnden
+\end{frame}
+
+%\subsection{Available Methods}%TODO write this
+%NEB Method, notes are probably on Toshiba!
+%String Method
+
+\section{String Method}%TODO write this
+%\subsection{Time-splitting scheme}
+%Mention both gradient descent and reparametrisation
+\begin{frame}
+\frametitle{The Problem}
+$$\gamma \dot{q} = -\nabla V(q)+\xi(t)$$
+\begin{itemize}
+\item $\gamma$ friction
+\item $V$ a potential
+\item $\xi$ some noise function
+\end{itemize}
+~\\
+Let $A$ and $B$ two local minima of $V$\\
+Wanted: $\phi^*$, the minimal energy path (MEP) from $A$ to $B$
+$$(\nabla V)^\bot(\phi^*)=0$$
+%Note that this also works on systems like Langevin equation
+\end{frame}
+
+\begin{frame}
+\frametitle{The Solution}
+Choose some initial $\phi$ from $A$ to $B$, let it evolve along $\nabla V$ to find $\phi^*$;
+$$\phi_t=-[\nabla V(\phi)]^\bot+r\hat t$$
+Where:
+\begin{itemize}
+\item $\hat t = {\phi_\alpha}/{|\phi_\alpha|}$\hspace{2em} the unit tangent vector along $\phi$
+\item $(\nabla V)^\bot = \nabla V - (\nabla V \cdot \hat t)\hat t$\hspace{2em}  projection on $\hat t^\bot$ 
+\item $r \equiv r(\alpha, t)$ \hspace{2em}a scalar field of Lagrange multipliers%TODO WHY?
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Splitting Method}
+We choose the parametrisation such that for any $t$:
+\begin{itemize}
+\item $\alpha\in [0,1]$
+\item $\phi(\alpha=0)=A$ 
+\item $\phi(\alpha=1)=B$
+\item $(|\phi_\alpha|)_\alpha = 0$ \hspace{3em} (Arc length is normalised)
+\end{itemize}
+~\\
+We use a splitting method with two phases to satisfy all constraints: 
+\begin{enumerate}
+\item $\phi_t=-[\nabla V(\phi)]^\bot$ \hspace{3em} (Move towards $\phi^*$)
+\item $(|\phi_\alpha|)_\alpha = 0$ \hspace{3em} (Keep arc length normalised)
+\end{enumerate}
+\end{frame}
+
+\section{Implementation}%TODO write this
+
+\begin{frame}
+\frametitle{Discretization of $\phi$}
+We choose $\phi_i = \phi(\alpha = \frac{i}{M})$, so that:
+\begin{itemize}
+\item $\phi$ becomes $\phi_0$, $\phi_1$, $\dots$, $\phi_M$
+\item  $\phi_0 = A$
+\item $\phi_M = B$
+\end{itemize}
+~\\
+To obtain $\phi_\alpha$ we use a finite difference (FD) scheme:\\
+~\\
+\begin{columns}[c]
+\column{.45\textwidth}
+\begin{block}{Forward Difference}
+$$(\phi_\alpha)_i = \frac{\phi_{i+1}-\phi_i}{\Delta}$$
+\end{block}
+\column{.45\textwidth}
+\begin{block}{Central Difference}
+$$(\phi_\alpha)_i = \frac{\phi_{i+1}-\phi_{i-1}}{2\Delta}$$
+\end{block}%NOTE \Delta is strange here!
+\end{columns}
+~\\
+~\\
+We need $\phi_\alpha$ for $\hat t = \phi_\alpha / |\phi_\alpha|$, note that $\Delta$ cancels.
+\end{frame}
+
+\begin{frame}
+\frametitle{Solving $\phi_t=-[\nabla V(\phi)]^\bot$}
+$$(\phi_t)_i=-[\nabla V(\phi_i)]^\bot = \nabla V(\phi_i) - (\nabla V(\phi_i) \cdot \hat t_i)\hat t_i$$\\~\\
+We choose a timestep $\dt$, let $t=n\dt$ for $n\in\{0, 1, \dots N\}$\\
+$$\phi_i^{n+1} = \phi_i^n+\dt(\phi_t)_i^n$$
+\begin{block}{To move towards $\phi^*$}
+$$\phi_i^{n+1} = \phi_i^n+\dt\Big{(}\nabla V\(\phi_i^n\) - \(\nabla V\(\phi_i^n\) \cdot \hat t_i^n\)\hat t_i^n\Big{)}$$
+\end{block}
+
+
+\end{frame}
+
+%\subsection{Gradient Descent}
+\begin{frame}
+\end{frame}
+
+
+%\subsection{Reparametrisation}
+\begin{frame}
+\end{frame}
+
+
+\section{Numerical Experiments}%TODO write this
+%\subsection{Peaks potential}
+\begin{frame}
+\end{frame}
+%\subsection{Particles with Lennart Jones}
+\begin{frame}
+\end{frame}
+%\subsection{Waves in solution}
+\begin{frame}
+\end{frame}
+%Forward vs central FD method to get t-hat
+%\subsection{Reparametrisation}
+\begin{frame}
+\end{frame}
+
+
+\section{Future Work}%TODO write this
+%Or outlook or something
+\begin{frame}
+\end{frame}
+
+
+\end{document} 
+
