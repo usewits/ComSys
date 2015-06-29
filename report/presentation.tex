@@ -59,32 +59,37 @@ Utrecht University\\
 
 \begin{frame}
 \frametitle{Transition Paths}
-What does the path between two local optima look like?\\
-~\\
+%What does the path between two local optima look like?\\
+%~\\
 
 \begin{figure}
-\includegraphics[scale=0.3]{application.png}
-\caption{B. Peters, A. Heyden, A. Bell, and A. Chakraborty\\ A growing string method for determining transition states:
-Comparison to the nudged elastic band and string methods (2004)}
+\includegraphics[scale=0.3]{application.png}\\
+{\tiny B. Peters, A. Heyden, A. Bell, and A. Chakraborty, A growing string method for determining transition states: Comparison to the nudged elastic band and string methods (2004)}
 \end{figure}
 
-Relevant to Material science, Quantum simulations, Microbiology, Nanotechnology, Chemistry and more.
+%Relevant to Material science, Quantum simulations, Microbiology, Nanotechnology, Chemistry and more.
 
 \end{frame}
 
 \begin{frame}
 \frametitle{How to find Transition Paths?}
-Monte Carlo Simulation\\
-\begin{itemize}
-\item[+] Easy to implement
-\item[--] Extremely inefficient
-\end{itemize}
+%Monte Carlo Simulation\\
+%\begin{itemize}
+%\item[+] Easy to implement
+%\item[--] Extremely inefficient
+%\end{itemize}
+%~\\
+%More modern method needed:\\
+%\begin{itemize}
+%\item Nudged Electric Band (NEB) Method (1994)\\
+%\item String Method (2002)
+%\end{itemize}
+%~\\
+\begin{center}
+{\Large The String Method!}
+\end{center}
 ~\\
-More modern method needed:\\
-\begin{itemize}
-\item Nudged Electric Band (NEB) Method (1994)\\
-\item String Method (2002)
-\end{itemize}
+~\\
 ~\\
 Weinan E, Weiquing Ren and Eric Vanden-Eijnden\\
 String method for the study of rare events (2002)
@@ -96,35 +101,38 @@ String method for the study of rare events (2002)
 \begin{frame}
 \frametitle{The Problem}
 $$\gamma \dot{q} = -\nabla V(q)+\xi(t)$$
-\begin{itemize}
-\item $\gamma$ friction
-\item $V$ a potential
-\item $\xi$ some noise function
-\end{itemize}
+%\begin{itemize}
+%\item $\gamma$ friction
+%\item $V$ a potential
+%\item $\xi$ some noise function
+%\end{itemize}
 ~\\
 Let $A$ and $B$ two local minima of $V$\\
-Wanted: $\phi^*$, the minimal energy path (MEP) from $A$ to $B$
+Find $\phi^*$, the minimal energy path (MEP) from $A$ to $B$
 $$(\nabla V)^\bot(\phi^*)=0$$
 %Note that this also works on systems like Langevin equation
 \end{frame}
 
 \begin{frame}
 \frametitle{The Solution}
-Choose some initial $\phi$ from $A$ to $B$, let it evolve along $\nabla V$ to find $\phi^*$;
+%Choose some initial $\phi$ from $A$ to $B$, let it evolve along $\nabla V$ to find $\phi^*$;
 $$\phi_t=-[\nabla V(\phi)]^\bot+r\hat t$$
+~\\
+~\\
 Where:
 \begin{itemize}
-\item $\hat t = {\phi_\alpha}/{|\phi_\alpha|}$\hspace{2em} the unit tangent vector along $\phi$
-\item $(\nabla V)^\bot = \nabla V - (\nabla V \cdot \hat t)\hat t$\hspace{2em}  projection on $\hat t^\bot$ 
-\item $r \equiv r(\alpha, t)$ \hspace{2em}a scalar field of Lagrange multipliers
+\item $\hat t = {\phi_\alpha}/{|\phi_\alpha|}$%\hspace{2em} the unit tangent vector along $\phi$
+\item $(\nabla V)^\bot = \nabla V - (\nabla V \cdot \hat t)\hat t$%\hspace{2em}  projection on $\hat t^\bot$ 
+\item $r \equiv r(\alpha, t)$% \hspace{2em}a scalar field of Lagrange multipliers
 \end{itemize}
-~\\
-It appears that E, Ren and Vanden-Eijnden do not actually use Lagrange multipliers to satisfy parametrisation constraints!%NOTE Should be comment?
+%~\\
+%It appears that E, Ren and Vanden-Eijnden do not actually use Lagrange multipliers to satisfy parametrisation constraints!%NOTE Should be comment?
 \end{frame}
 
 \begin{frame}
 \frametitle{Splitting Method}
-We choose the parametrisation such that for any $t$:
+%We choose the parametrisation such that for any $t$:
+Choose parametrisation:
 \begin{itemize}
 \item $\alpha\in [0,1]$
 \item $\phi(\alpha=0)=A$ 
@@ -132,7 +140,8 @@ We choose the parametrisation such that for any $t$:
 \item $(|\phi_\alpha|)_\alpha = 0$ \hspace{3em} (Arc length is normalised)
 \end{itemize}
 ~\\
-We use a splitting method with two phases to satisfy all constraints: 
+%We use a splitting method with two phases to satisfy all constraints: 
+Splitting Method:
 \begin{enumerate}
 \item $\phi_t=-[\nabla V(\phi)]^\bot$ \hspace{3em} (Move towards $\phi^*$)
 \item $(|\phi_\alpha|)_\alpha = 0$ \hspace{3em} (Keep arc length normalised)
@@ -211,11 +220,8 @@ $$J_n^{-1} = J_{n-1}^{-1} + \frac{\Delta \phi_n - J_{n-1}^{-1}\Delta F_n}{\Delta
 \item Improve iteratively until within $\epsilon$ precision (binary search)
 \end{itemize}
 \end{block}
-~\\
-...we will discuss experimental results later!
 \end{frame}
 
-%TODO write about alternate methods (Broydens)
 
 \section{Numerical Experiments}
 %\subsection{Peaks potential}
@@ -245,6 +251,20 @@ V(x,y) & = 3 (1-x)^2 e^{-x^2-(y+1)^2}\\
 &-\frac{1}{3} e^{-(x+1)^2-y^2}\\
 \end{align*}
 \end{frame}
+
+
+%\subsection{Reparametrisation}
+\begin{frame}
+\frametitle{Reparametrisation}
+\begin{tabular}{cc}
+Vanden-Eijnden & Me \\
+\includegraphics[scale=0.4]{reparamInterp1.png}&
+\includegraphics[scale=0.4]{reparamCustom.png}\\
+&
+\includegraphics[scale=0.4]{reparamCustomPartial.png}
+\end{tabular}
+\end{frame}
+
 
 \begin{frame}
 \frametitle{Peaks potential}
@@ -296,36 +316,22 @@ Soft LJ (Animation 3) & Hard LJ (Animation 4)\\
 \end{frame}
 
 
-%\subsection{Reparametrisation}
-\begin{frame}
-\frametitle{Reparametrisation}
-\begin{tabular}{cc}
-Vanden-Eijnden & Me \\
-\includegraphics[scale=0.4]{reparamInterp1.png}&
-\includegraphics[scale=0.4]{reparamCustom.png}\\
-&
-\includegraphics[scale=0.4]{reparamCustomPartial.png}
-\end{tabular}
-
-\end{frame}
-
-
 %\subsection{Waves in solution}
 %\begin{frame}%TODO write this
 
 %\end{frame}
-\begin{frame}
-\frametitle{Discussion}
-\begin{itemize}
-\item Why does my reparametrisation function not always reach $\epsilon$ precision?
-\item Provide faster implementation of my reparametrisation function
-\end{itemize}
-\end{frame}
+%\begin{frame}
+%\frametitle{Discussion}
+%\begin{itemize}
+%\item Why does my reparametrisation function not always reach $\epsilon$ precision?
+%\item Provide faster implementation of my reparametrisation function
+%\end{itemize}
+%\end{frame}
 
 \section{Beyond the String Method}
 \begin{frame}
 \frametitle{Beyond the String Method}
-Improved versions of the Sting Method:
+%Improved versions of the String Method:
 \begin{itemize}
 \item Growing String Method (2004)
 \item String Method in collective variables (aka Mean Forces) (2006)
@@ -341,13 +347,13 @@ Improved versions of the Sting Method:
 %    \item Does not need initial string!
 %    \end{itemize}
 \end{itemize}
-~\\
-Goals in research:
-\begin{itemize}
-\item Faster convergence
-\item No initial estimate required
-\item Better performance in rough potentials
-\end{itemize}
+%~\\
+%Goals in research:
+%\begin{itemize}
+%\item Faster convergence
+%\item No initial estimate required
+%\item Better performance in rough potentials
+%\end{itemize}
 \end{frame}
 
 \end{document} 
