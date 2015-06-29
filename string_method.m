@@ -9,8 +9,8 @@ global grad_energy;
 N = 200;          %Number of positions in string
 n_iters = 200;
 stepsize = 0.01;
-simulation = "peaks";
-%simulation = "particles";
+%simulation = "peaks";
+simulation = "particles";
 
 
 

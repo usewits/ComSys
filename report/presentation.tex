@@ -54,16 +54,41 @@ Utrecht University\\
 \tableofcontents
 \end{frame}
 
-\section{Introduction}%TODO write this
+\section{Introduction}
 %\subsection{Transition Paths}
+
 \begin{frame}
-String method for the study of rare events\\
-Weinan E, Weiquing Ren and Eric Vanden-Eijnden
+\frametitle{Transition Paths}
+What does the path between two local optima look like?\\
+~\\
+
+\begin{figure}
+\includegraphics[scale=0.3]{application.png}
+\caption{B. Peters, A. Heyden, A. Bell, and A. Chakraborty\\ A growing string method for determining transition states:
+Comparison to the nudged elastic band and string methods (2004)}
+\end{figure}
+
+Relevant to Material science, Quantum simulations, Microbiology, Nanotechnology, Chemistry and more.
+
 \end{frame}
 
-%\subsection{Available Methods}%TODO write this
-%NEB Method, notes are probably on Toshiba!
-%String Method
+\begin{frame}
+\frametitle{How to find Transition Paths?}
+Monte Carlo Simulation\\
+\begin{itemize}
+\item[+] Easy to implement
+\item[--] Extremely inefficient
+\end{itemize}
+~\\
+More modern method needed:\\
+\begin{itemize}
+\item Nudged Electric Band (NEB) Method (1994)\\
+\item String Method (2002)
+\end{itemize}
+~\\
+Weinan E, Weiquing Ren and Eric Vanden-Eijnden\\
+String method for the study of rare events (2002)
+\end{frame}
 
 \section{String Method}
 %\subsection{Time-splitting scheme}
@@ -158,8 +183,8 @@ $$\phi_i^{n+1} = \phi_i^n+\dt\Big{(}\nabla V\(\phi_i^n\) - \(\nabla V\(\phi_i^n\
 \begin{block}{$\mathcal{O}(n)$ approximate method (used by Eric Vanden-Eijnden)}
 \begin{itemize}
 \item Use piecewise linear interpolation
-\item Let $L$ be the total length along this curve
-\item Put $\phi_i$ at distance $L/M$ along this curve
+\item Let $L$ be the total length of this curve
+\item Put $\phi_i$ at distance $L/M$ \textbf{along this curve}
 \end{itemize}
 \end{block}
 ~\\
@@ -179,47 +204,135 @@ $$\phi_i^{n+1} = \phi_i^n+\dt\Big{(}\nabla V\(\phi_i^n\) - \(\nabla V\(\phi_i^n\
 \section{Numerical Experiments}
 %\subsection{Peaks potential}
 \begin{frame}
-Peaks potential
+\frametitle{Peaks potential}
+\vspace{-1em}
+\begin{columns}[c]
+\column{.35\textwidth}
+
+The peaks potential:
 \begin{itemize}
 \item 2 dimensional
 \item Smooth
 \item Easy to visualise
 \item Lots of peaks
 \end{itemize}
-~\\
+
+\column{.65\textwidth}
+\begin{center}
+\includegraphics[scale=0.6]{peaks.png}
+\end{center}
+\end{columns}
+
+\begin{align*}
+V(x,y) & = 3 (1-x)^2 e^{-x^2-(y+1)^2}\\
+&-10 e^{-x^2-y^2} \left(-x^3+\frac{x}{5}-y^5\right)\\
+&-\frac{1}{3} e^{-(x+1)^2-y^2}\\
+\end{align*}
+\end{frame}
+
+\begin{frame}
+\frametitle{Peaks potential}
 Some experiments:
 \begin{itemize}
 \item Comparison of central and forward difference (Animation 1)
 \item Comparison of different timestep sizes (Animation 2)
 \end{itemize}
-
+~\\
+Convergence with the string method:
 \begin{center}
-\includegraphics[scale=0.4]{peaksEnergy.png}
+\includegraphics[scale=0.5]{peaksEnergy.png}
 \end{center}
 
 \end{frame}
 
 %\subsection{Particles with Lennart Jones}
-\begin{frame}%TODO write this
-Soft Lennart Jones (Animation 3)
-Hard Lennart Jones (Animation 4)
-%Files are already in folder
+\begin{frame}
+\frametitle{Particles with Lennard Jones (LJ) potential }
+\vspace{-1.5em}
+\begin{center}
+\includegraphics[scale=0.35]{ljAB.png}
+\end{center}
+
+\begin{columns}[c]
+\column{.5\textwidth}
+Soft Lennard Jones potential:
+$$V(r) = \(\frac{1}{r}\)^4-2\(\frac{1}{r}\)^2$$
+
+``Hard'' Lennard Jones potential:
+$$V(r) = \(\frac{1}{r}\)^{12}-2\(\frac{1}{r}\)^6$$
+
+\column{.5\textwidth}
+\includegraphics[scale=0.45]{ljplot.png}
+\end{columns}
+
 \end{frame}
 
-%\subsection{Waves in solution}
-\begin{frame}%TODO write this
+\begin{frame}
+\frametitle{Particles with Lennard Jones (LJ) potential}
+\begin{tabular}{cc}
+Soft LJ (Animation 3) & Hard LJ (Animation 4)\\
+&\\
+\includegraphics[scale=0.43]{SoftLJ200Energy.png} &
+\includegraphics[scale=0.43]{HardLJ200Energy.png}\\
+\includegraphics[scale=0.35]{SoftLJ200energy_vs_iteration.png} &
+\includegraphics[scale=0.35]{HardLJ200energy_vs_iteration.png}
+\end{tabular}
 \end{frame}
+
 
 %\subsection{Reparametrisation}
-\begin{frame}%TODO write this
-\end{frame}
-
-
-\section{Future Work}%TODO write this
-%Or outlook or something
 \begin{frame}
+\frametitle{Reparametrisation}
+\begin{tabular}{cc}
+Vanden-Eijnden & Me \\
+\includegraphics[scale=0.4]{reparamInterp1.png}&
+\includegraphics[scale=0.4]{reparamCustom.png}\\
+&
+\includegraphics[scale=0.4]{reparamCustomPartial.png}
+\end{tabular}
+
 \end{frame}
 
+
+%\subsection{Waves in solution}
+%\begin{frame}%TODO write this
+
+%\end{frame}
+\begin{frame}
+\frametitle{Discussion}
+\begin{itemize}
+\item Why does my reparametrisation function not always reach $\epsilon$ precision?
+\item Provide faster implementation of my reparametrisation function
+\end{itemize}
+\end{frame}
+
+\section{Beyond the String Method}
+\begin{frame}
+\frametitle{Beyond the String Method}
+Improved versions of the Sting Method:
+\begin{itemize}
+\item Growing String Method (2004)
+\item String Method in collective variables (aka Mean Forces) (2006)
+\item On the fly String Method (2007)
+%On-the-fly string method for minimum free energy paths calculation
+%Luca Maragliano, Eric Vanden-Eijnden
+\item Swarm of trajectories String Method (2008)
+%Finding Transition Pathways Using the String Method with Swarms of Trajectories
+%Albert C. Pan, Deniz Sezer, and Benoît Roux
+%
+%    \begin{itemize}
+%    \item Faster in practice
+%    \item Does not need initial string!
+%    \end{itemize}
+\end{itemize}
+~\\
+Goals in research:
+\begin{itemize}
+\item Faster convergence
+\item No initial estimate required
+\item Better performance in rough potentials
+\end{itemize}
+\end{frame}
 
 \end{document} 
 
