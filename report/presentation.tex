@@ -24,18 +24,13 @@
 \newcommand{\floor}[1]{\lfloor #1 \rfloor}
 \newcommand{\half}[1]{\frac{{#1}}{2}}
 
-%There are different themes/colorthemes
-%\usetheme{default}
 \mode<presentation>{
-    %\usetheme{Berlin}
+    \usetheme{Warsaw}
     \setbeamertemplate{navigation symbols}{}
     \setbeamersize{text margin left=2em,text margin right=2em}
     \useoutertheme[subsection=false]{miniframes}
-    %\useinnertheme[shadow]{rounded}
     \usecolortheme{rose}
 }
-%\useoutertheme{infolines}
-%\useoutertheme[subsection=false]{miniframes}
 
 \title[String Method]{The String Method} % short title / long title
 
@@ -70,7 +65,7 @@ Weinan E, Weiquing Ren and Eric Vanden-Eijnden
 %NEB Method, notes are probably on Toshiba!
 %String Method
 
-\section{String Method}%TODO write this
+\section{String Method}
 %\subsection{Time-splitting scheme}
 %Mention both gradient descent and reparametrisation
 \begin{frame}
@@ -96,8 +91,10 @@ Where:
 \begin{itemize}
 \item $\hat t = {\phi_\alpha}/{|\phi_\alpha|}$\hspace{2em} the unit tangent vector along $\phi$
 \item $(\nabla V)^\bot = \nabla V - (\nabla V \cdot \hat t)\hat t$\hspace{2em}  projection on $\hat t^\bot$ 
-\item $r \equiv r(\alpha, t)$ \hspace{2em}a scalar field of Lagrange multipliers%TODO WHY?
+\item $r \equiv r(\alpha, t)$ \hspace{2em}a scalar field of Lagrange multipliers
 \end{itemize}
+~\\
+It appears that E, Ren and Vanden-Eijnden do not actually use Lagrange multipliers to satisfy parametrisation constraints!%NOTE Should be comment?
 \end{frame}
 
 \begin{frame}
@@ -117,7 +114,7 @@ We use a splitting method with two phases to satisfy all constraints:
 \end{enumerate}
 \end{frame}
 
-\section{Implementation}%TODO write this
+\section{Implementation}
 
 \begin{frame}
 \frametitle{Discretization of $\phi$}
@@ -153,33 +150,68 @@ $$\phi_i^{n+1} = \phi_i^n+\dt(\phi_t)_i^n$$
 \begin{block}{To move towards $\phi^*$}
 $$\phi_i^{n+1} = \phi_i^n+\dt\Big{(}\nabla V\(\phi_i^n\) - \(\nabla V\(\phi_i^n\) \cdot \hat t_i^n\)\hat t_i^n\Big{)}$$
 \end{block}
-
-
 \end{frame}
-
-%\subsection{Gradient Descent}
-\begin{frame}
-\end{frame}
-
 
 %\subsection{Reparametrisation}
 \begin{frame}
+\frametitle{Satisfying $(|\phi_\alpha|)_\alpha=0$}
+\begin{block}{$\mathcal{O}(n)$ approximate method (used by Eric Vanden-Eijnden)}
+\begin{itemize}
+\item Use piecewise linear interpolation
+\item Let $L$ be the total length along this curve
+\item Put $\phi_i$ at distance $L/M$ along this curve
+\end{itemize}
+\end{block}
+~\\
+\begin{block}{$\mathcal{O}(n\log \frac{L}{\epsilon})$ $\epsilon$-precision method (used by me)}
+\begin{itemize}
+\item Use piecewise linear interpolation
+\item Try some distance $d$, set $||\phi_{i+1}-\phi_i|| = d \in [0, L/M]$
+\item Improve iteratively until within $\epsilon$ precision (binary search)
+\end{itemize}
+\end{block}
+~\\
+...we will discuss experimental results later!
 \end{frame}
 
+%TODO write about alternate methods (Broydens)
 
-\section{Numerical Experiments}%TODO write this
+\section{Numerical Experiments}
 %\subsection{Peaks potential}
 \begin{frame}
+Peaks potential
+\begin{itemize}
+\item 2 dimensional
+\item Smooth
+\item Easy to visualise
+\item Lots of peaks
+\end{itemize}
+~\\
+Some experiments:
+\begin{itemize}
+\item Comparison of central and forward difference (Animation 1)
+\item Comparison of different timestep sizes (Animation 2)
+\end{itemize}
+
+\begin{center}
+\includegraphics[scale=0.4]{peaksEnergy.png}
+\end{center}
+
 \end{frame}
+
 %\subsection{Particles with Lennart Jones}
-\begin{frame}
+\begin{frame}%TODO write this
+Soft Lennart Jones (Animation 3)
+Hard Lennart Jones (Animation 4)
+%Files are already in folder
 \end{frame}
+
 %\subsection{Waves in solution}
-\begin{frame}
+\begin{frame}%TODO write this
 \end{frame}
-%Forward vs central FD method to get t-hat
+
 %\subsection{Reparametrisation}
-\begin{frame}
+\begin{frame}%TODO write this
 \end{frame}
 
 
