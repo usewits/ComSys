@@ -177,6 +177,22 @@ $$\phi_i^{n+1} = \phi_i^n+\dt\Big{(}\nabla V\(\phi_i^n\) - \(\nabla V\(\phi_i^n\
 \end{block}
 \end{frame}
 
+\begin{frame}
+\frametitle{Solving $\phi_t=-[\nabla V(\phi)]^\bot$ more efficiently}
+We can use Broyden's Method instead. We want to find $\phi$ such that:
+$$F(\phi)=[\nabla V(\phi)]^\bot = 0$$
+Now let $J_0^{-1}$ the inverse of the Jacobian of $F$ in the point $\phi_0$ (our initial $\phi$), denote $\Delta \phi = \phi_{n} - \phi_{n-1}$ and $\Delta F = F_n - F_{n-1}$.
+\begin{block}{Calculate $\phi_n$}
+$$\phi_{n}=\phi_{n-1} - J_{n-1}^{-1}F(x_{n-1})$$
+\end{block}
+Afterwards, we can update the inverse of the Jacobian directly:
+\begin{block}{Calculate $J_n^{-1}$}
+$$J_n^{-1} = J_{n-1}^{-1} + \frac{\Delta \phi_n - J_{n-1}^{-1}\Delta F_n}{\Delta \phi_n^{\top}J_{n-1}^{-1}\Delta F_n}\Delta \phi_n^\top J_{n-1}^{-1}$$
+\end{block}
+
+\end{frame}
+
+
 %\subsection{Reparametrisation}
 \begin{frame}
 \frametitle{Satisfying $(|\phi_\alpha|)_\alpha=0$}
